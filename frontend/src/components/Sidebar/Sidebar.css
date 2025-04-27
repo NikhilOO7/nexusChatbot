@@ -1,0 +1,103 @@
+.sidebar {
+    width: 80px;
+    height: 100%;
+    background-color: var(--color-sidebar);
+    color: var(--color-sidebar-text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 0;
+    transition: width 0.3s ease;
+  }
+  
+  .sidebar:hover {
+    width: 200px;
+  }
+  
+  .sidebar-logo {
+    margin-bottom: 2rem;
+  }
+  
+  .logo-circle {
+    width: 50px;
+    height: 50px;
+    background-color: white;
+    color: var(--color-sidebar);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
+  
+  .sidebar-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    flex: 1;
+  }
+  
+  .sidebar-button {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin: 0 0.5rem;
+    background: transparent;
+    color: var(--color-sidebar-text);
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: calc(100% - 1rem);
+    justify-content: center;
+  }
+  
+  .sidebar-button:hover {
+    background-color: var(--color-sidebar-hover);
+  }
+  
+  .sidebar-button.active {
+    background-color: var(--color-sidebar-hover);
+  }
+  
+  .sidebar-label {
+    display: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-align: left;
+  }
+  
+  .sidebar:hover .sidebar-label {
+    display: block;
+  }
+  
+  .sidebar:hover .sidebar-button {
+    justify-content: flex-start;
+  }
+  
+  .sidebar-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: auto;
+    width: 100%;
+  }
+  
+  @media (max-width: 768px) {
+    .sidebar {
+      width: 60px;
+    }
+    
+    .sidebar:hover {
+      width: 180px;
+    }
+    
+    .logo-circle {
+      width: 40px;
+      height: 40px;
+      font-size: 1rem;
+    }
+  }

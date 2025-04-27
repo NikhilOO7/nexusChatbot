@@ -1,17 +1,30 @@
-import { Chat } from './components/Chat'
-import './App.css'
+import { Sidebar } from './components/Sidebar/Sidebar';
+import { MainContent } from './components/MainContent/MainContent';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { useState } from 'react';
+import './App.css';
+
+// Section types
+export type SectionType = 'chat' | 'knowledge' | 'analytics' | 'settings';
 
 function App() {
+  const [activeSection, setActiveSection] = useState<SectionType>('chat');
+
   return (
-    <div className="app">
-      <header>
-        <h1>AI Customer Support Chatbot</h1>
-      </header>
-      <main>
-        <Chat />
-      </main>
-    </div>
-  )
+    <ThemeProvider>
+      <div className="app">
+        <main>
+          <div className="layout">
+            <Sidebar 
+              activeSection={activeSection} 
+              onSectionChange={setActiveSection} 
+            />
+            <MainContent activeSection={activeSection} />
+          </div>
+        </main>
+      </div>
+    </ThemeProvider>
+  );
 }
 
-export default App
+export default App;

@@ -1,0 +1,57 @@
+.header {
+    background-color: var(--color-bg-primary);
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .header h1 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--color-text-primary);
+  }
+  
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .icon-button {
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  
+  .icon-button:hover {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+  }
+  
+  .primary-button {
+    background-color: var(--color-accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.2s;
+  }
+  
+  .primary-button:hover {
+    background-color: var(--color-accent-hover);
+  }
