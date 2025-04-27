@@ -1,0 +1,29 @@
+graph TD
+    A[Customer] -->|Interacts with| B[React Frontend]
+    B -->|Sends Queries| C[Node.js API Gateway]
+    C -->|Authentication| D[Auth Service]
+    C -->|Query Processing| E[Python NLP Service]
+    E -->|Intent Recognition| F[NLTK/Hugging Face Models]
+    E -->|Context Management| G[Session State Handler]
+    E -->|Knowledge Retrieval| H[FAISS Vector Store]
+    H -->|Stores| I[Embedded Documents]
+    E -->|Response Generation| J[LangChain Orchestrator]
+    J -->|API Calls| K[OpenAI GPT-4o]
+    J -->|Fallback Logic| L[Predefined Responses]
+    C -->|Logs Interactions| M[MongoDB]
+    M -->|Powers| N[Analytics Service]
+    N -->|Displays| O[Admin Dashboard]
+    C -->|Integration| P[Enterprise Ticketing System]
+    P -->|Human Escalation| Q[Support Agent Interface]
+
+    classDef frontend fill:#f9d6ff,stroke:#333,stroke-width:2px
+    classDef backend fill:#d0e0ff,stroke:#333,stroke-width:2px
+    classDef database fill:#fdf5dd,stroke:#333,stroke-width:2px
+    classDef ai fill:#d4ffea,stroke:#333,stroke-width:2px
+    classDef external fill:#ffd6cc,stroke:#333,stroke-width:2px
+
+    class A,B frontend
+    class C,D,E,G,J,N frontend
+    class M,H,I database
+    class F,K ai
+    class P,Q external
