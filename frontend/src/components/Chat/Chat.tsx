@@ -6,6 +6,7 @@ import { MessageItem } from './MessageItem';
 import { SuggestedResponses } from './SuggestedResponses';
 import { TypingIndicator } from './TypingIndicator';
 import { ContextPanel } from './ContextPanel';
+import { useAuth } from '../../contexts/AuthContext';
 import './Chat.css';
 
 interface ChatProps {
@@ -13,10 +14,11 @@ interface ChatProps {
 }
 
 export const Chat: React.FC<ChatProps> = ({ sessionId }) => {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: 'Hello! I\'m your AI customer support assistant. How can I help you today?',
+      content: `Hello${user ? ' ' + user.name : ''}! I'm your AI customer support assistant. How can I help you today?`,
       isUser: false,
       timestamp: new Date(),
       sentiment: 'positive'
@@ -35,6 +37,38 @@ export const Chat: React.FC<ChatProps> = ({ sessionId }) => {
     scrollToBottom();
   }, [messages]);
 
+  // Load conversation history
+  useEffect(() => {
+    const loadChatHistory = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) return; // Not authenticated
+
+        const response = await fetch(`http://localhost:3000/api/chat/history/${sessionId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.messages && data.messages.length > 0) {
+            // Convert date strings to Date objects
+            const formattedMessages = data.messages.map((msg: any) => ({
+              ...msg,
+              timestamp: new Date(msg.timestamp)
+            }));
+            setMessages(formattedMessages);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+      }
+    };
+
+    loadChatHistory();
+  }, [sessionId]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -52,18 +86,36 @@ export const Chat: React.FC<ChatProps> = ({ sessionId }) => {
     setShowSuggestions(false);
 
     try {
-      // In a real app, we would call the API here
-      // For now, let's simulate a response
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const token = localStorage.getItem('authToken');
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      };
       
-      const responseContent = getSimulatedResponse(input);
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch('http://localhost:3000/api/chat', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          query: input,
+          sessionId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response');
+      }
+
+      const data = await response.json();
       
       const botMessage: Message = {
         id: crypto.randomUUID(),
-        content: responseContent,
+        content: data.response,
         isUser: false,
         timestamp: new Date(),
-        sentiment: 'positive',
+        sentiment: data.sentiment,
       };
 
       setMessages(prev => [...prev, botMessage]);
@@ -124,30 +176,7 @@ export const Chat: React.FC<ChatProps> = ({ sessionId }) => {
         </form>
       </div>
       
-      <ContextPanel />
+      <ContextPanel sessionId={sessionId} />
     </div>
   );
 };
-
-// Helper function to simulate responses (will be replaced with actual API call)
-function getSimulatedResponse(input: string): string {
-  const lowerInput = input.toLowerCase();
-  
-  if (lowerInput.includes('hello') || lowerInput.includes('hi')) {
-    return "Hello! How can I help you today?";
-  }
-  
-  if (lowerInput.includes('account')) {
-    return "I can help with account-related questions. What specific information do you need about your account?";
-  }
-  
-  if (lowerInput.includes('password')) {
-    return "To reset your password, please:\n\n1. Go to the login page\n2. Click 'Forgot Password'\n3. Enter your email address\n4. Follow the instructions sent to your email";
-  }
-  
-  if (lowerInput.includes('billing')) {
-    return "For billing inquiries, I can help explain charges, update payment methods, or assist with subscription changes. What specific billing question do you have?";
-  }
-  
-  return "I understand your question. Let me search our knowledge base for the most relevant information to help you.";
-}

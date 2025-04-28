@@ -1,16 +1,20 @@
-import { MessageSquare, FileText, BarChart2, Settings, User, Sun, Moon } from 'lucide-react';
+import { MessageSquare, FileText, BarChart2, Settings, User, Sun, Moon, LogOut } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
-import { SectionType } from '../../App';
+import { SectionType } from '../../pages/Dashboard/Dashboard';
 import './Sidebar.css';
 
 interface SidebarProps {
   activeSection: SectionType;
   onSectionChange: (section: SectionType) => void;
+  onLogout: () => void;
+  user: any;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
   activeSection, 
-  onSectionChange 
+  onSectionChange,
+  onLogout,
+  user
 }) => {
   const { theme, toggleTheme } = useTheme();
   
@@ -71,6 +75,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button className="sidebar-button" aria-label="User profile">
           <User size={24} />
           <span className="sidebar-label">Profile</span>
+          {user && <span className="sidebar-user">{user.name.split(' ')[0]}</span>}
+        </button>
+        
+        <button 
+          className="sidebar-button logout"
+          onClick={onLogout}
+          aria-label="Logout"
+        >
+          <LogOut size={24} />
+          <span className="sidebar-label">Logout</span>
         </button>
       </div>
     </div>

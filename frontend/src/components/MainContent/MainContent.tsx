@@ -1,19 +1,20 @@
-import { useState } from 'react';
 import { Chat } from '../Chat/Chat';
 import { Knowledge } from '../Knowledge/Knowledge';
 import { Analytics } from '../Analytics/Analytics';
 import { Settings } from '../Settings/Settings';
 import { Header } from '../Header/Header';
-import { SectionType } from '../../App';
+import { SectionType } from '../../pages/Dashboard/Dashboard';
 import './MainContent.css';
 
 interface MainContentProps {
   activeSection: SectionType;
+  sessionId: string;
 }
 
-export const MainContent: React.FC<MainContentProps> = ({ activeSection }) => {
-  const [sessionId] = useState(() => crypto.randomUUID());
-  
+export const MainContent: React.FC<MainContentProps> = ({ 
+  activeSection, 
+  sessionId 
+}) => {
   return (
     <div className="main-content">
       <Header title={getSectionTitle(activeSection)} />
