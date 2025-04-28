@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authApi } from '../services/api';
+import config from '../config/environment';
 
 interface User {
   id: string;
@@ -25,12 +26,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const authStorageKey = config.authStorageKey;
+
   useEffect(() => {
     // Check if user is already logged in
     const checkAuth = async () => {
       try {
         const storedUser = localStorage.getItem('user');
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem(authStorageKey);
 
         if (storedUser && token) {
           try {
@@ -42,12 +45,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             } else {
               // Token invalid, log out
               localStorage.removeItem('user');
-              localStorage.removeItem('authToken');
+              localStorage.removeItem(authStorageKey);
             }
           } catch (error) {
             console.error('Authentication error:', error);
             localStorage.removeItem('user');
-            localStorage.removeItem('authToken');
+            localStorage.removeItem(authStorageKey);
           }
         }
       } catch (error) {
@@ -58,7 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     checkAuth();
-  }, []);
+  }, [authStorageKey]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -83,7 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       if (response) {
-        localStorage.setItem('authToken', response.token);
+        localStorage.setItem(authStorageKey, response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
         setUser(response.user);
       }
@@ -113,7 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await authApi.register(name, email, password);
       
-      localStorage.setItem('authToken', response.token);
+      localStorage.setItem(authStorageKey, response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
       setUser(response.user);
     } catch (error) {
@@ -134,7 +137,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('authToken');
+    localStorage.removeItem(authStorageKey);
     localStorage.removeItem('user');
     setUser(null);
   };

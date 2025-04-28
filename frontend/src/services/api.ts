@@ -1,9 +1,12 @@
+import config from '../config/environment';
+
 // Base API configuration
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+const API_URL = config.apiUrl;
+const AI_SERVICE_URL = config.aiServiceUrl;
 
 // Generic request handler with error handling
 async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
-  const token = localStorage.getItem('authToken');
+  const token = localStorage.getItem(config.authStorageKey);
   
   // Set default headers
   let headers: HeadersInit = {
@@ -38,13 +41,50 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   }
 }
 
+// AI Service request handler
+async function fetchFromAIService(endpoint: string, options: RequestInit = {}) {
+  const token = localStorage.getItem(config.authStorageKey);
+  
+  // Set default headers
+  let headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+  
+  // Add auth token if available
+  if (token) {
+    headers = {
+      ...headers,
+      'Authorization': `Bearer ${token}`
+    };
+  }
+  
+  try {
+    const response = await fetch(`${AI_SERVICE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
+    
+    // Handle HTTP errors
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `AI Service Error: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('AI Service Error:', error);
+    throw error;
+  }
+}
+
 // Chat API endpoints
 export const chatApi = {
   // Send a message to the chatbot
   sendMessage: async (query: string, sessionId: string) => {
-    return fetchWithAuth('/api/chat', {
+    return fetchFromAIService('/chat', {
       method: 'POST',
-      body: JSON.stringify({ query, sessionId }),
+      body: JSON.stringify({ query, session_id: sessionId }),
     });
   },
   
@@ -60,7 +100,7 @@ export const chatApi = {
   
   // Summarize a conversation
   summarizeConversation: async (sessionId: string) => {
-    return fetchWithAuth(`/api/chat/summarize/${sessionId}`);
+    return fetchFromAIService(`/chat/summarize/${sessionId}`);
   },
   
   // Get related articles for context panel
@@ -93,11 +133,13 @@ export const authApi = {
 // Knowledge base API endpoints
 export const knowledgeApi = {
   uploadDocuments: async (formData: FormData) => {
-    const token = localStorage.getItem('authToken');
-    const headers: HeadersInit = {};
+    const token = localStorage.getItem(config.authStorageKey);
+    let headers: HeadersInit = {};
     
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers = {
+        'Authorization': `Bearer ${token}`
+      };
     }
     
     try {
