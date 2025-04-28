@@ -1,69 +1,58 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { MongoClient } from 'mongodb';
-import axios from 'axios';
+import mongoose from 'mongoose';
+import authRoutes from './routes/authRoutes';
+import sessionRoutes from './routes/sessionRoutes';
+import chatRoutes from './routes/chatRoutes';
+import knowledgeRoutes from './routes/knowledgeRoutes';
+import logger from './utils/logger';
 
+// Load environment variables
 dotenv.config();
 
+// Create Express app
 const app = express();
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
+// Define port
 const PORT = process.env.PORT || 3000;
-const PYTHON_SERVICE_URL = process.env.PYTHON_SERVICE_URL || 'http://localhost:8000';
-
-// MongoDB connection
-const mongoClient = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost:27017');
 
 // Connect to MongoDB
-async function connectDB() {
-    try {
-        await mongoClient.connect();
-        console.log('Connected to MongoDB');
-    } catch (error) {
-        console.error('MongoDB connection error:', error);
-    }
-}
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/chatbot');
+    logger.info('Connected to MongoDB');
+  } catch (error) {
+    logger.error('MongoDB connection error:', error);
+    process.exit(1);
+  }
+};
 
-// Chat endpoint
-app.post('/api/chat', async (req, res) => {
-    try {
-        const { query, sessionId } = req.body;
-        
-        // Forward request to Python service
-        const response = await axios.post(`${PYTHON_SERVICE_URL}/chat`, {
-            query,
-            session_id: sessionId
-        });
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/knowledge', knowledgeRoutes);
+app.use('/api/sessions', sessionRoutes);
 
-        res.json(response.data);
-    } catch (error) {
-        console.error('Chat error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
 });
 
-// Analytics endpoints
-app.get('/api/analytics/common-intents', async (req, res) => {
-    try {
-        const db = mongoClient.db('chatbot');
-        const analytics = await db.collection('chat_history')
-            .aggregate([
-                { $group: { _id: '$intent', count: { $sum: 1 } } },
-                { $sort: { count: -1 } },
-                { $limit: 10 }
-            ]).toArray();
-        
-        res.json(analytics);
-    } catch (error) {
-        console.error('Analytics error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
+// Start server
 connectDB().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-    });
+  app.listen(PORT, () => {
+    logger.info(`Server running on port ${PORT}`);
+  });
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  logger.error('Unhandled Rejection:', err);
+  // Close server & exit process
+  process.exit(1);
 });
