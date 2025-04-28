@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { ExternalLink, RefreshCw } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { ExternalLink, RefreshCw, Clock, X } from 'lucide-react';
+import { chatApi } from '../../services/api';
 import './Chat.css';
 
 interface ContextPanelProps {
   sessionId: string;
+  onClose?: () => void;
 }
 
 interface RelatedArticle {
@@ -14,44 +15,79 @@ interface RelatedArticle {
   relevance: number;
 }
 
-export const ContextPanel: React.FC<ContextPanelProps> = ({ sessionId }) => {
-  const { user } = useAuth();
-  const [relatedArticles, setRelatedArticles] = useState<RelatedArticle[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+interface ConversationSummary {
+  topics: string[];
+  sentiment: string;
+  duration: string;
+  messageCount: number;
+}
 
+export const ContextPanel: React.FC<ContextPanelProps> = ({ sessionId, onClose }) => {
+  const [relatedArticles, setRelatedArticles] = useState<RelatedArticle[]>([]);
+  const [conversationSummary, setConversationSummary] = useState<ConversationSummary | null>(null);
+  const [isLoadingArticles, setIsLoadingArticles] = useState(false);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load related articles when session changes
   useEffect(() => {
-    fetchRelatedArticles();
+    if (sessionId) {
+      fetchRelatedArticles();
+      fetchConversationSummary();
+    }
   }, [sessionId]);
 
   const fetchRelatedArticles = async () => {
-    setIsLoading(true);
+    setIsLoadingArticles(true);
+    setError(null);
+    
     try {
-      const token = localStorage.getItem('authToken');
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json'
-      };
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetch(`http://localhost:3000/api/knowledge/related/${sessionId}`, {
-        headers
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setRelatedArticles(data.articles || []);
-      }
-    } catch (error) {
-      console.error('Error fetching related articles:', error);
+      const data = await chatApi.getRelatedArticles(sessionId);
+      setRelatedArticles(data.articles || []);
+    } catch (err) {
+      console.error('Error fetching related articles:', err);
+      setError('Failed to load related articles');
     } finally {
-      setIsLoading(false);
+      setIsLoadingArticles(false);
+    }
+  };
+
+  const fetchConversationSummary = async () => {
+    // Only fetch summary if the conversation has been going for a while
+    if (!sessionId) return;
+    
+    setIsLoadingSummary(true);
+    
+    try {
+      const data = await chatApi.summarizeConversation(sessionId);
+      if (data.summary) {
+        setConversationSummary({
+          topics: data.summary.topics || [],
+          sentiment: data.summary.sentiment || 'neutral',
+          duration: data.summary.duration || 'ongoing',
+          messageCount: data.summary.messageCount || 0
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching conversation summary:', err);
+      // Don't show an error for summary failures
+    } finally {
+      setIsLoadingSummary(false);
     }
   };
 
   return (
     <div className="context-panel">
+      {onClose && (
+        <button 
+          className="context-close mobile-only" 
+          onClick={onClose}
+          aria-label="Close context panel"
+        >
+          <X size={16} />
+        </button>
+      )}
+      
       <div className="context-section">
         <div className="context-header-with-action">
           <h3 className="context-header">Conversation Details</h3>
@@ -61,17 +97,47 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({ sessionId }) => {
           <h4 className="context-subheader">Session Info</h4>
           <div className="context-item">
             <span className="context-label">Session ID:</span>
-            <span className="context-value">{sessionId.substring(0, 8)}</span>
+            <span className="context-value">{sessionId.substring(0, 8)}...</span>
           </div>
-          <div className="context-item">
-            <span className="context-label">Duration:</span>
-            <span className="context-value">Active</span>
-          </div>
-          <div className="context-item">
-            <span className="context-label">User Type:</span>
-            <span className="context-value">{user ? 'Registered' : 'Guest'}</span>
-          </div>
+          {conversationSummary ? (
+            <>
+              <div className="context-item">
+                <span className="context-label">Duration:</span>
+                <span className="context-value">{conversationSummary.duration}</span>
+              </div>
+              <div className="context-item">
+                <span className="context-label">Messages:</span>
+                <span className="context-value">{conversationSummary.messageCount}</span>
+              </div>
+              <div className="context-item">
+                <span className="context-label">Overall Tone:</span>
+                <span className={`context-value sentiment-${conversationSummary.sentiment}`}>
+                  {conversationSummary.sentiment}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="context-item">
+              <span className="context-label">Status:</span>
+              <span className="context-value">
+                {isLoadingSummary ? 'Analyzing...' : 'Active'}
+              </span>
+            </div>
+          )}
         </div>
+        
+        {conversationSummary && conversationSummary.topics.length > 0 && (
+          <div className="topics-section">
+            <h4 className="context-subheader">Key Topics</h4>
+            <div className="topic-tags">
+              {conversationSummary.topics.map((topic, index) => (
+                <span key={index} className="topic-tag">
+                  {topic}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       
       <div className="context-section">
@@ -80,14 +146,22 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({ sessionId }) => {
           <button 
             className="context-action-button" 
             onClick={fetchRelatedArticles}
-            disabled={isLoading}
+            disabled={isLoadingArticles}
+            title="Refresh related articles"
           >
-            <RefreshCw size={14} className={isLoading ? 'spin' : ''} />
+            <RefreshCw size={14} className={isLoadingArticles ? 'spin' : ''} />
           </button>
         </div>
         
         <div className="related-articles">
-          {relatedArticles.length > 0 ? (
+          {isLoadingArticles ? (
+            <div className="loading-articles">
+              <div className="loading-spinner small"></div>
+              <span>Loading articles...</span>
+            </div>
+          ) : error ? (
+            <div className="error-message small">{error}</div>
+          ) : relatedArticles.length > 0 ? (
             relatedArticles.map(article => (
               <a 
                 key={article.id} 
@@ -108,20 +182,21 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({ sessionId }) => {
         </div>
       </div>
       
-      {user && (
-        <div className="context-section">
-          <h4 className="context-subheader">Current User</h4>
-          <div className="user-info">
-            <div className="user-avatar">
-              {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+      <div className="context-section">
+        <h4 className="context-subheader">Conversation Timeline</h4>
+        <div className="timeline">
+          <div className="timeline-item">
+            <div className="timeline-icon">
+              <Clock size={14} />
             </div>
-            <div className="user-details">
-              <div className="user-name">{user.name}</div>
-              <div className="user-since">{user.email}</div>
+            <div className="timeline-content">
+              <div className="timeline-title">Conversation Started</div>
+              <div className="timeline-time">Just now</div>
             </div>
           </div>
+          {/* More timeline items would be added dynamically */}
         </div>
-      )}
+      </div>
     </div>
   );
 };

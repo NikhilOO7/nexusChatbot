@@ -1,21 +1,56 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { validators, validateForm } from '../../utils/validation';
 import './Auth.css';
 
 export const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  
+  const [formErrors, setFormErrors] = useState<Record<string, string | null>>({
+    email: null,
+    password: null
+  });
+  
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prevData => ({ ...prevData, [name]: value }));
+    
+    // Clear errors when the user starts typing
+    if (formErrors[name]) {
+      setFormErrors(prevErrors => ({ ...prevErrors, [name]: null }));
+    }
+  };
+
+  const validateLoginForm = () => {
+    const validationRules = {
+      email: [validators.required, validators.email],
+      password: [validators.required]
+    };
+    
+    const errors = validateForm(formData, validationRules);
+    setFormErrors(errors);
+    
+    // Form is valid if there are no errors
+    return !Object.values(errors).some(error => error !== null);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
-      setError('Please fill in all fields');
+    // Validate form
+    if (!validateLoginForm()) {
       return;
     }
     
@@ -23,26 +58,9 @@ export const LoginPage: React.FC = () => {
     setError('');
     
     try {
-      // Replace with actual API call
-      const response = await fetch('http://localhost:3000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      await login(formData.email, formData.password);
       
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
-      
-      // Store token in localStorage
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
-      // Redirect to dashboard
+      // Redirect to dashboard on successful login
       navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
@@ -76,13 +94,18 @@ export const LoginPage: React.FC = () => {
               <label htmlFor="email">Email</label>
               <input
                 id="email"
+                name="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={handleChange}
                 placeholder="Your email address"
                 disabled={isLoading}
+                className={formErrors.email ? 'input-error' : ''}
                 required
               />
+              {formErrors.email && (
+                <div className="field-error">{formErrors.email}</div>
+              )}
             </div>
             
             <div className="form-group">
@@ -90,11 +113,13 @@ export const LoginPage: React.FC = () => {
               <div className="password-input">
                 <input
                   id="password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={formData.password}
+                  onChange={handleChange}
                   placeholder="Your password"
                   disabled={isLoading}
+                  className={formErrors.password ? 'input-error' : ''}
                   required
                 />
                 <button
@@ -106,6 +131,9 @@ export const LoginPage: React.FC = () => {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              {formErrors.password && (
+                <div className="field-error">{formErrors.password}</div>
+              )}
               <Link to="/forgot-password" className="forgot-password">
                 Forgot password?
               </Link>

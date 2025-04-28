@@ -1,0 +1,46 @@
+.error-fallback {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 2rem;
+    text-align: center;
+    background-color: var(--color-bg-secondary);
+  }
+  
+  .error-icon {
+    color: #ef4444;
+    margin-bottom: 1rem;
+  }
+  
+  .error-fallback h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--color-text-primary);
+  }
+  
+  .error-details {
+    color: var(--color-text-secondary);
+    margin-bottom: 1.5rem;
+    max-width: 32rem;
+  }
+  
+  .retry-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--color-accent);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .retry-button:hover {
+    background-color: var(--color-accent-hover);
+  }
