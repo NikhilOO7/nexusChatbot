@@ -63,7 +63,7 @@ export const validators = {
 
 // Helper function to validate a form field
 export const validateField = (
-  name: string,
+  _name: string, // Marked as unused
   value: string,
   validations: Array<(value: string, ...args: any[]) => string | null>,
   args: any[] = []

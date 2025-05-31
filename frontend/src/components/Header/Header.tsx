@@ -7,7 +7,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ title }) => {
-  const { theme, toggleTheme } = useTheme();
+  useTheme(); // Called for potential side effects, but values are unused
   
   return (
     <header className="header">

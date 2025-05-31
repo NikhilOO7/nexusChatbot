@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, ArrowLeft, Plus, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Send, Plus, ChevronRight, ChevronLeft } from 'lucide-react';
 import { MessageItem } from './MessageItem';
 import { SuggestedResponses } from './SuggestedResponses';
 import { TypingIndicator } from './TypingIndicator';

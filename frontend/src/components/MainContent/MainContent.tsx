@@ -8,18 +8,18 @@ import './MainContent.css';
 
 interface MainContentProps {
   activeSection: SectionType;
-  sessionId: string;
+  // sessionId: string; // Removed as it's no longer used
 }
 
 export const MainContent: React.FC<MainContentProps> = ({ 
-  activeSection, 
-  sessionId 
+  activeSection
+  // sessionId // Removed
 }) => {
   return (
     <div className="main-content">
       <Header title={getSectionTitle(activeSection)} />
       <div className="content-container">
-        {activeSection === 'chat' && <Chat sessionId={sessionId} />}
+        {activeSection === 'chat' && <Chat />}
         {activeSection === 'knowledge' && <Knowledge />}
         {activeSection === 'analytics' && <Analytics />}
         {activeSection === 'settings' && <Settings />}
